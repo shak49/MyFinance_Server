@@ -38,7 +38,7 @@ router.post('/auth/sign-up', async (req, res) => {
     }
 });
 // Sign In
-router.get('/auth/sign-in', async (req, res) => {
+router.post('/auth/sign-in', async (req, res) => {
     // User exist validation
     const user = await User.findOne({ email: req.body.email });
     if (!user) return res.status(401).json({ error: `This user with id: ${re.body.id} is not exist.`});
@@ -51,38 +51,38 @@ router.get('/auth/sign-in', async (req, res) => {
     try {
         // Generating JWT
         const token = jwt.sign({ email: user.email }, 'secret');
-        res.cookie('token', token).status(200).json({ token });
+        res.cookie('token', token).status(200).json(token);
     } catch (error) {
         res.status(501).json({ error: 'Internal server error.'});
     }
 });
 // Apple authentication
-// router.post('/auth/apple', async (req, res) => {
-//     const { token, email, apple_id } = req.body;
-//     const registeredUser = { apple_id, email };
-//     const user = await User.findOne({ apple_id: apple_id });
-//     if (user) {
-//         if (email && email !== user.email) {
-//             User.updateOne(req.body);
-//             user.email = req.body.email;
-//         }
-//         res.status(200).send(user);
-//     } else {
-//         await axios.get(env.APPLE_PUBLIC_KEYS, async (error, body) => {
-//             if (error) {
-//                 res.status(401).json({ error: error });
-//             } else {
-//                 //const key = jwt.asKeyStore(body);
-//                 try {
-//                     const verified = jwt.verify(token, 'secret');
-//                     if (verified) await user.save(registeredUser);
-//                 } catch(error) {
-//                     res.status(500).json({ error: error });
-//                 }
-//             }
-//         });
-//     }
-// });
+router.post('/auth/apple', async (req, res) => {
+    const { token, email, apple_id } = req.body;
+    const registeredUser = { apple_id, email };
+    const user = await User.findOne({ apple_id: apple_id });
+    if (user) {
+        if (email && email !== user.email) {
+            User.updateOne(req.body);
+            user.email = req.body.email;
+        }
+        res.status(200).json(user);
+    } else {
+        await axios.get(env.APPLE_PUBLIC_KEYS, async (error, body) => {
+            if (error) {
+                res.status(401).json({ error: error });
+            } else {
+                //const key = jwt.asKeyStore(body);
+                try {
+                    const verified = jwt.verify(token, 'secret');
+                    if (verified) await user.save(registeredUser);
+                } catch(error) {
+                    res.status(500).json({ error: error });
+                }
+            }
+        });
+    }
+});
 // Google sign in request
 // router.get('/auth/google/sign-in', (req, res) => {
 //     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.CLIENT_ID}&redirect_uri=${env.REDIRECT_URI}&response_type=code&scope=profile email`;
@@ -110,12 +110,12 @@ router.get('/auth/sign-in', async (req, res) => {
 //     }
 // });
 // Sign Out
-// router.get('/auth/sign-out', (req, res) => {
-//     res.cookie('cookie', '', {
-//         expireIn: new Date(Date.now())
-//     })
-//     res.status(200).json({ message: 'User Logout Successfully' });
-// });
+router.get('/auth/sign-out', (req, res) => {
+    res.cookie('cookie', '', {
+        expireIn: new Date(Date.now())
+    })
+    res.status(200).json({ message: 'User Logout Successfully' });
+});
 // Current User
 // router.get('/auth/current-user', (req, res) => {
 //     const token = req.cookies.jwt;

@@ -10,7 +10,7 @@ import User from '../models/User.js';
 import { validateSignUp, validateSignIn } from '../validation.js';
 
 const router = express.Router();
-//const env = process.env;
+const env = process.env;
 // Create User
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
@@ -32,9 +32,9 @@ router.post('/auth/sign-up', async (req, res) => {
     });
     try {
         const savedUser = await user.save();
-        res.post(savedUser);
+        res.status(200).json(savedUser);
     } catch(error) {
-        res.status(400).json(error);
+        res.status(500).json(error);
     }
 });
 // Sign In

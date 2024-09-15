@@ -118,7 +118,6 @@ router.get('/auth/sign-out', (req, res) => {
 });
 // Current User
 router.get('/auth/current-user', (req, res) => {
-    // Retrieve token from cookies
     const token = req.cookies.jwt;
     if (!token) return res.status(401).json({ error: 'Invalid token.' });
     jwt.verify(token, 'secret', (error, decodedToken) => {

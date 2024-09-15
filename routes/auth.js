@@ -32,7 +32,7 @@ router.post('/auth/sign-up', async (req, res) => {
     });
     try {
         const savedUser = await user.save();
-        res.post(`${savedUser.firstname} ${savedUser.lastname} was created.`);
+        res.post(savedUser);
     } catch(error) {
         res.status(400).json(error);
     }

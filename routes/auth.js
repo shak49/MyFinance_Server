@@ -10,7 +10,7 @@ import User from '../models/User.js';
 import { validateSignUp, validateSignIn } from '../validation.js';
 
 const router = express.Router();
-const env = process.env;
+//const env = process.env;
 // Create User
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation

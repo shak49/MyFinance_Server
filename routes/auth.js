@@ -51,7 +51,7 @@ router.post('/auth/sign-in', async (req, res) => {
     try {
         // Generating JWT
         const token = jwt.sign({ email: user.email }, 'secret');
-        res.cookie('token', token).status(200).json({ id_token: token });
+        res.cookie('token', token).status(200).json({ access_token: token });
     } catch (error) {
         res.status(501).json({ error: 'Internal server error.'});
     }
@@ -59,23 +59,24 @@ router.post('/auth/sign-in', async (req, res) => {
 // Apple authentication
 router.post('/auth/apple', async (req, res) => {
     const { token, email, apple_id } = req.body;
-    const registeredUser = { apple_id, email };
+    const newUser = { apple_id, email };
     const user = await User.findOne({ apple_id: apple_id });
     if (user) {
         if (email && email !== user.email) {
             User.updateOne(req.body);
             user.email = req.body.email;
         }
-        res.status(200).json(user);
+        res.cookie('token', token).status(200).json({ access_token: token });
     } else {
         await axios.get(env.APPLE_PUBLIC_KEYS, async (error, body) => {
             if (error) {
                 res.status(401).json({ error: error });
             } else {
-                //const key = jwt.asKeyStore(body);
+                const key = jwt.asKeyStore(body);
                 try {
-                    const verified = jwt.verify(token, 'secret');
-                    if (verified) await user.save(registeredUser);
+                    const verified = jwt.verify(token, key);
+                    if (verified) await user.save(newUser);
+                    res.cookie('token', token).status(200).json({ access_token: token });
                 } catch(error) {
                     res.status(500).json({ error: error });
                 }

@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    apple_id: {
+        type: String,
+        require: false
+    },
     time_stamp: {
         type: Date,
         default: Date.now

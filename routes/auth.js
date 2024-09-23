@@ -32,7 +32,8 @@ router.post('/auth/sign-up', async (req, res) => {
     });
     try {
         const savedUser = await user.save();
-        res.status(200).json(savedUser);
+        const token = jwt.sign({ email: savedUser.email }, 'secret');
+        res.cookie('token', token).status(200).json({ access_token: token });
     } catch(error) {
         res.status(500).json(error);
     }

@@ -41,7 +41,7 @@ router.post('/auth/sign-up', async (req, res) => {
 router.post('/auth/sign-in', async (req, res) => {
     // User exist validation
     const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(401).json({ error: `This user with id: ${re.body.id} is not exist.`});
+    if (!user) return res.status(401).json({ error: `This user with id: ${req.body.id} is not exist.`});
     // Sign in validation
     const error = validateSignIn(req.body).error;
     if (error) return res.status(400).json(error.details[0]);

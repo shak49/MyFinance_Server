@@ -33,7 +33,7 @@ router.post('/auth/sign-up', async (req, res) => {
     try {
         const savedUser = await user.save();
         const token = jwt.sign({ email: savedUser.email }, 'secret');
-        res.cookie('token', token).status(200).json({ access_token: token });
+        res.cookie('token', token).status(200).json({ auth_token: token });
     } catch(error) {
         res.status(500).json(error);
     }
@@ -52,7 +52,7 @@ router.post('/auth/sign-in', async (req, res) => {
     try {
         // Generating JWT
         const token = jwt.sign({ email: user.email }, 'secret');
-        res.cookie('token', token).status(200).json({ access_token: token });
+        res.cookie('token', token).status(200).json({ auth_token: token });
     } catch (error) {
         res.status(501).json({ error: 'Internal server error.'});
     }

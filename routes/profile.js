@@ -10,9 +10,6 @@ const env = process.env;
 // Current User
 router.get('/profile/current-user', (req, res) => {
     const token = req.headers.authorization;
-    if (token.startsWith('Bearer ')) {
-        token.substring(7, token.length);
-    }
     if (!token) return res.status(401).json({ error: 'Invalid token.' });
     try {
         const decoded = jwt.verify(token, 'secret');

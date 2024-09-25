@@ -9,10 +9,10 @@ const router = express.Router();
 const env = process.env;
 // Current User
 router.get('/profile/current-user', (req, res, next) => {
-    const access_token = req.header("access_token");
-    if (!access_token) return res.status(401).json({ error: 'Invalid token.' });
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: 'Invalid token.' });
     try {
-        const decoded = jwt.verify(access_token, 'secret');
+        const decoded = jwt.verify(token, 'secret');
         req.user = decoded.user;
         next();
     } catch (error) {

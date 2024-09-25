@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import authRoute from './routes/auth.js';
+import profileRoute from './routes/profile.js';
 
 const app = express();
 const PORT = 4000;
@@ -16,6 +17,7 @@ mongoose.connect(process.env.DB_CONNECT);
 
 app.use(bodyParser.json());
 app.use(authRoute);
+app.use(profileRoute);
 app.get('/', (req, res) => {
     res.send('Welcome to myFinance!');
 });

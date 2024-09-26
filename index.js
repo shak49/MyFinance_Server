@@ -12,7 +12,6 @@ const app = express();
 const PORT = 4000;
 
 dotenv.config();
-
 mongoose.connect(process.env.DB_CONNECT);
 
 app.use(bodyParser.json());

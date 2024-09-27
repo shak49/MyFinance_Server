@@ -24,9 +24,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    apple_id: {
+    avator_color: {
         type: String,
-        require: false
+        require: true
     },
     time_stamp: {
         type: Date,

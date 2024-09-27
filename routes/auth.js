@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import randomColor from 'randomcolor';
 import User from '../models/User.js';
 import { validateSignUp, validateSignIn } from '../validation.js';
 
@@ -28,7 +29,11 @@ router.post('/auth/sign-up', async (req, res) => {
         firstname: req.body.firstname,
         lastname: req.body.lastname,
         email: req.body.email,
-        password: encryptedPassword
+        password: encryptedPassword,
+        avator_color: randomColor({
+            luminosity: 'random',
+            hue: 'random'
+        })
     });
     try {
         const savedUser = await user.save();

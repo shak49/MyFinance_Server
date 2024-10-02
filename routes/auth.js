@@ -16,10 +16,10 @@ const env = process.env;
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
     const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) return res.status(400).json({ error: 'Email already exists.' });
+    if (existingUser) return res.status(400).send('Email already exists.');
     // Sign up validation
     const error = validateSignUp(req.body).error;
-    if (error) return res.status(400).json(error.details[0].message);
+    if (error) return res.status(400).send(error.details[0].message);
     // Password encryption
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(req.body.password, salt);
@@ -40,26 +40,26 @@ router.post('/auth/sign-up', async (req, res) => {
         const token = jwt.sign({ email: savedUser.email }, 'secret');
         res.cookie('token', token).status(200).json({ access_token: token });
     } catch(error) {
-        res.status(500).json(error);
+        res.status(500).send(error.details[0].message);
     }
 });
 // Sign In
 router.post('/auth/sign-in', async (req, res) => {
     // User exist validation
     const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(401).json({ error: `This user with id: ${req.body.id} is not exist.`});
+    if (!user) return res.status(401).send(`This user with id: ${req.body.id} is not exist.`);
     // Sign in validation
     const error = validateSignIn(req.body).error;
-    if (error) return res.status(400).json(error.details[0]);
+    if (error) return res.status(400).send(error.details[0].message);
     // Password match
     const passwordMatch = await bcrypt.compare(req.body.password, user.password);
-    if (!passwordMatch) return res.status(401).json({ error: 'Invalid credentials.' });
+    if (!passwordMatch) return res.status(401).send('Invalid credentials.');
     try {
         // Generating JWT
         const token = jwt.sign({ email: user.email }, 'secret');
         res.cookie('token', token).status(200).json({ access_token: token });
     } catch (error) {
-        res.status(501).json({ error: 'Internal server error.'});
+        res.status(501).send('Internal server error.');
     }
 });
 // Apple authentication

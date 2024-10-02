@@ -16,10 +16,10 @@ const env = process.env;
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
     const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) return res.status(400).json({ error: 'Email already exists.' });
+    if (existingUser) return res.status(400).send('Email already exists.');
     // Sign up validation
     const error = validateSignUp(req.body).error;
-    if (error) return res.status(400).json(error.details[0]);
+    if (error) return res.status(400).send(error.details[0].message);
     // Password encryption
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(req.body.password, salt);
@@ -40,7 +40,7 @@ router.post('/auth/sign-up', async (req, res) => {
         const token = jwt.sign({ email: savedUser.email }, 'secret');
         res.cookie('token', token).status(200).json({ access_token: token });
     } catch(error) {
-        res.status(500).json(error);
+        res.status(500).send(error);
     }
 });
 // Sign In

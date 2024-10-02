@@ -19,7 +19,7 @@ router.post('/auth/sign-up', async (req, res) => {
     if (existingUser) return res.status(400).json({ error: 'Email already exists.' });
     // Sign up validation
     const error = validateSignUp(req.body).error;
-    if (error) return res.status(400).json(error.details[0]);
+    if (error) return res.status(400).json(error.details[0].message);
     // Password encryption
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(req.body.password, salt);

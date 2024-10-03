@@ -17,12 +17,18 @@ router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
     const existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
-        res.statusMessage = 'Email already exists.';
-        return res.status(401);
+        const message = 'Email already exists.';
+        res.statusMessage = message;
+        res.send(message);
+        return res.status(401).end();
     };
     // Sign up validation
     const error = validateSignUp(req.body).error;
-    if (error) return res.status(402).send(error.details[0].message);
+    if (error) {
+        res.statusMessage = error.details[0].message;
+        res.send(error.details[0].message);
+        return res.status(402).end();
+    };
     // Password encryption
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(req.body.password, salt);
@@ -43,7 +49,9 @@ router.post('/auth/sign-up', async (req, res) => {
         const token = jwt.sign({ email: savedUser.email }, 'secret');
         res.cookie('token', token).status(200).json({ access_token: token });
     } catch(error) {
-        res.status(500).send(error.details[0].message);
+        res.statusMessage = error.details[0].message;
+        res.send(error.details[0].message);
+        return res.status(500).end();
     }
 });
 // Sign In

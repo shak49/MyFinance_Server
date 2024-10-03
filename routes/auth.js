@@ -16,7 +16,10 @@ const env = process.env;
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
     const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) return res.status(401).send('Email already exists.');
+    if (existingUser) {
+        res.statusMessage = 'Email already exists.';
+        return res.status(401);
+    };
     // Sign up validation
     const error = validateSignUp(req.body).error;
     if (error) return res.status(402).send(error.details[0].message);

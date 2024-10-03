@@ -16,45 +16,32 @@ const env = process.env;
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
     const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) {
-        const message = 'Email already exists.';
-        res.statusMessage = message;
-        res.send(message);
-        return res.status(401).end();
-    } else {
-        // Sign up validation
-        const error = validateSignUp(req.body).error;
-        if (error) {
-            res.statusMessage = error.details[0].message;
-            res.send(error.details[0].message);
-            return res.status(402).end();
-        } else {
-            // Password encryption
-            const salt = await bcrypt.genSalt(10);
-            const encryptedPassword = await bcrypt.hash(req.body.password, salt);
-            // User object creation
-            const user = new User({
-                _id: uuidv4(),
-                firstname: req.body.firstname,
-                lastname: req.body.lastname,
-                email: req.body.email,
-                password: encryptedPassword,
-                avator_color: randomColor({
-                    luminosity: 'random',
-                    hue: 'random'
-                })
-            });
-            try {
-                const savedUser = await user.save();
-                const token = jwt.sign({ email: savedUser.email }, 'secret');
-                res.cookie('token', token).status(200).json({ access_token: token });
-            } catch(error) {
-                res.statusMessage = error.details[0].message;
-                res.send(error.details[0].message);
-                return res.status(500).end();
-            }
-        };
-    };
+    if (existingUser) return res.status(401).send('Email already exists.');
+    // Sign up validation
+    const error = validateSignUp(req.body).error;
+    if (error) return res.status(402).send(error.details[0].message);
+    // Password encryption
+    const salt = await bcrypt.genSalt(10);
+    const encryptedPassword = await bcrypt.hash(req.body.password, salt);
+    // User object creation
+    const user = new User({
+        _id: uuidv4(),
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
+        email: req.body.email,
+        password: encryptedPassword,
+        avator_color: randomColor({
+            luminosity: 'random',
+            hue: 'random'
+        })
+    });
+    try {
+        const savedUser = await user.save();
+        const token = jwt.sign({ email: savedUser.email }, 'secret');
+        res.cookie('token', token).status(200).json({ access_token: token });
+    } catch(error) {
+        res.status(500).send(error.details[0].message);
+    }
 });
 // Sign In
 router.post('/auth/sign-in', async (req, res) => {

@@ -64,7 +64,40 @@ router.post('/auth/sign-in', async (req, res) => {
 });
 // Google sign in request
 router.post('auth/google', async (req, res) => {
-
+    try {
+        const code = req.headers.authorization;
+        const response = await axios.post('https://oauth2.googleapis.com/token', {
+            code,
+            client_id: env.CLIENT_ID,
+            client_secret: env.CLIENT_SECRET,
+            redirect_uri: env.REDIRECT_URI,
+            grant_type: 'authorization_code'
+        });
+        const accessToken = response.data.access_token;
+        const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const userDetails = userResponse.data;
+        const user = User.findOne({ email: userDetails.email });
+        // Generating JWT
+        const token = jwt.sign({ email: user.email }, 'secret');
+        if (user) {
+            if (userDetails.email && userDetailsemail !== user.email) {
+                User.updateOne({
+                    firstname: userDetails.firstname,
+                    lastname: userDetails.lastname,
+                    email: userDetails.email,
+                    password: userDetails.password
+                });
+                user.email = userDetails.email;
+                res.cookie('token', token).status(200).json({ access_token: token });
+            }
+        } else {
+            res.cookie('token', token).status(200).json({ access_token: token });
+        }
+    } catch (error) {
+        res.status(500).send({ message: 'Internal server error.' });
+    }
 });
 // Apple authentication
 // router.post('/auth/apple', async (req, res) => {

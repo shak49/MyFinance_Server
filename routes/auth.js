@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import { OAuth2Client } from 'google-auth-library';
 import randomColor from 'randomcolor';
 import User from '../models/User.js';
 import { validateSignUp, validateSignIn } from '../validation.js';
@@ -63,7 +64,7 @@ router.post('/auth/sign-in', async (req, res) => {
     }
 });
 // Google sign in request
-router.post('auth/google', async (req, res) => {
+router.post('/auth/google', async (req, res) => {
     try {
         const code = req.headers.authorization;
         const response = await axios.post('https://oauth2.googleapis.com/token', {
@@ -79,20 +80,32 @@ router.post('auth/google', async (req, res) => {
         });
         const userDetails = userResponse.data;
         const user = User.findOne({ email: userDetails.email });
-        // Generating JWT
-        const token = jwt.sign({ email: user.email }, 'secret');
+        // Password encryption
+        const salt = await bcrypt.genSalt(10);
+        const encryptedPassword = await bcrypt.hash(userDetails.password, salt);
+        const userObject = {
+            _id: uuidv4(),
+            firstname: userDetails.firstname,
+            lastname: userDetails.lastname,
+            email: userDetails.email,
+            password: encryptedPassword,
+            avator_color: randomColor({
+                luminosity: 'random',
+                hue: 'random'
+            })
+        };
         if (user) {
-            if (userDetails.email && userDetailsemail !== user.email) {
-                User.updateOne({
-                    firstname: userDetails.firstname,
-                    lastname: userDetails.lastname,
-                    email: userDetails.email,
-                    password: userDetails.password
-                });
-                user.email = userDetails.email;
+            if (userDetails.email && userDetails.email !== user.email) {
+                User.updateOne(userObject);
+                // Generating JWT
+                const token = jwt.sign({ email: userObject.email }, 'secret');
                 res.cookie('token', token).status(200).json({ access_token: token });
             }
         } else {
+            const user = new User(newUser);
+            const savedUser = await user.save();
+            // Generating JWT
+            const token = jwt.sign({ email: savedUser.email }, 'secret');
             res.cookie('token', token).status(200).json({ access_token: token });
         }
     } catch (error) {

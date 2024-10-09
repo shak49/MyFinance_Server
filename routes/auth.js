@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import { OAuth2Client } from 'google-auth-library';
 import randomColor from 'randomcolor';
 import User from '../models/User.js';
 import { validateSignUp, validateSignIn } from '../validation.js';
@@ -16,10 +17,10 @@ const env = process.env;
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
     const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) return res.status(401).send('Email already exists.');
+    if (existingUser) return res.status(401).send({ message: 'Email already exists.' });
     // Sign up validation
     const error = validateSignUp(req.body).error;
-    if (error) return res.status(402).send(error.details[0].message);
+    if (error) return res.status(402).send({ message: 'Unable to validate fields!' });
     // Password encryption
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(req.body.password, salt);
@@ -40,26 +41,75 @@ router.post('/auth/sign-up', async (req, res) => {
         const token = jwt.sign({ email: savedUser.email }, 'secret');
         res.cookie('token', token).status(200).json({ access_token: token });
     } catch(error) {
-        res.status(500).send(error.details[0].message);
+        res.status(500).send({ message: 'Internal server error.' });
     }
 });
 // Sign In
 router.post('/auth/sign-in', async (req, res) => {
     // User exist validation
     const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(401).send(`This user with id: ${req.body.id} is not exist.`);
+    if (!user) return res.status(403).send({ message: `This user with id: ${req.body.id} is not exist.` });
     // Sign in validation
     const error = validateSignIn(req.body).error;
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(402).send({ message: 'Unable to validate fields!' });
     // Password match
     const passwordMatch = await bcrypt.compare(req.body.password, user.password);
-    if (!passwordMatch) return res.status(401).send('Invalid credentials.');
+    if (!passwordMatch) return res.status(404).send({ message: 'Invalid credentials.' });
     try {
         // Generating JWT
         const token = jwt.sign({ email: user.email }, 'secret');
         res.cookie('token', token).status(200).json({ access_token: token });
     } catch (error) {
-        res.status(501).send('Internal server error.');
+        res.status(500).send({ message: 'Internal server error.' });
+    }
+});
+// Google sign in request
+router.post('/auth/google', async (req, res) => {
+    try {
+        const code = req.headers.authorization;
+        const response = await axios.post('https://oauth2.googleapis.com/token', {
+            code,
+            client_id: env.CLIENT_ID,
+            client_secret: env.CLIENT_SECRET,
+            redirect_uri: env.REDIRECT_URI,
+            grant_type: 'authorization_code'
+        });
+        const accessToken = response.data.access_token;
+        const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const userDetails = userResponse.data;
+        const user = User.findOne({ email: userDetails.email });
+        // Password encryption
+        const salt = await bcrypt.genSalt(10);
+        const encryptedPassword = await bcrypt.hash(userDetails.password, salt);
+        const userObject = {
+            _id: uuidv4(),
+            firstname: userDetails.firstname,
+            lastname: userDetails.lastname,
+            email: userDetails.email,
+            password: encryptedPassword,
+            avator_color: randomColor({
+                luminosity: 'random',
+                hue: 'random'
+            })
+        };
+        if (user) {
+            if (userDetails.email && userDetails.email !== user.email) {
+                User.updateOne(userObject);
+                // Generating JWT
+                const token = jwt.sign({ email: userObject.email }, 'secret');
+                res.cookie('token', token).status(200).json({ access_token: token });
+            }
+        } else {
+            const user = new User(newUser);
+            const savedUser = await user.save();
+            // Generating JWT
+            const token = jwt.sign({ email: savedUser.email }, 'secret');
+            res.cookie('token', token).status(200).json({ access_token: token });
+        }
+    } catch (error) {
+        res.status(500).send({ message: 'Internal server error.' });
     }
 });
 // Apple authentication
@@ -88,32 +138,6 @@ router.post('/auth/sign-in', async (req, res) => {
 //                 }
 //             }
 //         });
-//     }
-// });
-// Google sign in request
-// router.get('/auth/google/sign-in', (req, res) => {
-//     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.CLIENT_ID}&redirect_uri=${env.REDIRECT_URI}&response_type=code&scope=profile email`;
-//     res.redirect(url);
-// });
-// Google sign in callback
-// router.get('/auth/google/sign-in/callback', async (req, res) => {
-//     const { code } = req.query;
-//     try {
-//         const { data } = await axios.post('<https://oauth2.googleapis.com/token>', {
-//             client_id: env.CLIENT_ID,
-//             client_secret: env.CLIENT_SECRET,
-//             code,
-//             redirect_uri: env.REDIRECT_URI,
-//             grant_type: 'authorization_code',
-//         });
-//         const { access_token, id_token } = data;
-//         const profile = await axios.get('<https://www.googleapis.com/oauth2/v1/userinfo>', {
-//             headers: { Authorization: `Bearer ${access_token}` },
-//         });
-//         res.status(200).json(profile);
-//     } catch(error) {
-//         res.status(501).json({ error: 'Internal server error.'});
-//         res.redirect('/login');
 //     }
 // });
 // Sign Out

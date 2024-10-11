@@ -64,54 +64,54 @@ router.post('/auth/sign-in', async (req, res) => {
     }
 });
 // Google sign in request
-// router.post('/auth/google', async (req, res) => {
-//     try {
-//         const code = req.headers.authorization;
-//         const response = await axios.post('https://oauth2.googleapis.com/token', {
-//             code,
-//             client_id: env.CLIENT_ID,
-//             client_secret: env.CLIENT_SECRET,
-//             redirect_uri: env.REDIRECT_URI,
-//             grant_type: 'authorization_code'
-//         });
-//         const accessToken = response.data.access_token;
-//         const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-//             headers: { Authorization: `Bearer ${accessToken}` }
-//         });
-//         const userDetails = userResponse.data;
-//         const user = User.findOne({ email: userDetails.email });
-//         // Password encryption
-//         const salt = await bcrypt.genSalt(10);
-//         const encryptedPassword = await bcrypt.hash(userDetails.password, salt);
-//         const userObject = {
-//             _id: uuidv4(),
-//             firstname: userDetails.firstname,
-//             lastname: userDetails.lastname,
-//             email: userDetails.email,
-//             password: encryptedPassword,
-//             avator_color: randomColor({
-//                 luminosity: 'random',
-//                 hue: 'random'
-//             })
-//         };
-//         if (user) {
-//             if (userDetails.email && userDetails.email !== user.email) {
-//                 User.updateOne(userObject);
-//                 // Generating JWT
-//                 const token = jwt.sign({ email: userObject.email }, 'secret');
-//                 res.cookie('token', token).status(200).json({ access_token: token });
-//             }
-//         } else {
-//             const user = new User(newUser);
-//             const savedUser = await user.save();
-//             // Generating JWT
-//             const token = jwt.sign({ email: savedUser.email }, 'secret');
-//             res.cookie('token', token).status(200).json({ access_token: token });
-//         }
-//     } catch (error) {
-//         res.status(500).send({ message: 'Internal server error.' });
-//     }
-// });
+router.post('/auth/google', async (req, res) => {
+    try {
+        const code = req.headers.authorization;
+        const response = await axios.post('https://oauth2.googleapis.com/token', {
+            code,
+            client_id: env.CLIENT_ID,
+            client_secret: env.CLIENT_SECRET,
+            redirect_uri: env.REDIRECT_URI,
+            grant_type: 'authorization_code'
+        });
+        const accessToken = response.data.access_token;
+        const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const userDetails = userResponse.data;
+        const user = User.findOne({ email: userDetails.email });
+        // Password encryption
+        const salt = await bcrypt.genSalt(10);
+        const encryptedPassword = await bcrypt.hash(userDetails.password, salt);
+        const userObject = {
+            _id: uuidv4(),
+            firstname: userDetails.firstname,
+            lastname: userDetails.lastname,
+            email: userDetails.email,
+            password: encryptedPassword,
+            avator_color: randomColor({
+                luminosity: 'random',
+                hue: 'random'
+            })
+        };
+        if (user) {
+            if (userDetails.email && userDetails.email !== user.email) {
+                User.updateOne(userObject);
+                // Generating JWT
+                const token = jwt.sign({ email: userObject.email }, 'secret');
+                res.cookie('token', token).status(200).json({ access_token: token });
+            }
+        } else {
+            const user = new User(newUser);
+            const savedUser = await user.save();
+            // Generating JWT
+            const token = jwt.sign({ email: savedUser.email }, 'secret');
+            res.cookie('token', token).status(200).json({ access_token: token });
+        }
+    } catch (error) {
+        res.status(500).send({ message: 'Internal server error.' });
+    }
+});
 // Apple authentication
 // router.post('/auth/apple', async (req, res) => {
 //     const { token, email, apple_id } = req.body;

@@ -13,6 +13,7 @@ import { validateSignUp, validateSignIn } from '../validation.js';
 
 const router = express.Router();
 const env = process.env;
+const client = new OAuth2Client();
 // Create User
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
@@ -64,38 +65,31 @@ router.post('/auth/sign-in', async (req, res) => {
     }
 });
 // Google sign in request
-router.post('/auth/google', async (req, res) => {
+router.get('/auth/google', async (req, res) => {
+    const idToken = req.headers.authorization;
+    const ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: env.CLIENT_ID
+    });
+    let response = ticket.getPayload();
+    const user = User.findOne({ email: response.email });
+    // Password encryption
+    //const salt = await bcrypt.genSalt(10);
+    //const encryptedPassword = await bcrypt.hash(response.password, salt);
+    const userObject = {
+        _id: uuidv4(),
+        firstname: response.firstname,
+        lastname: response.lastname,
+        email: response.email,
+        //password: encryptedPassword,
+        avator_color: randomColor({
+            luminosity: 'random',
+            hue: 'random'
+        })
+    };
     try {
-        const code = req.headers.authorization;
-        const response = await axios.post('https://oauth2.googleapis.com/token', {
-            code,
-            client_id: env.CLIENT_ID,
-            client_secret: env.CLIENT_SECRET,
-            redirect_uri: env.REDIRECT_URI,
-            grant_type: 'authorization_code'
-        });
-        const accessToken = response.data.access_token;
-        const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        const userDetails = userResponse.data;
-        const user = User.findOne({ email: userDetails.email });
-        // Password encryption
-        const salt = await bcrypt.genSalt(10);
-        const encryptedPassword = await bcrypt.hash(userDetails.password, salt);
-        const userObject = {
-            _id: uuidv4(),
-            firstname: userDetails.firstname,
-            lastname: userDetails.lastname,
-            email: userDetails.email,
-            password: encryptedPassword,
-            avator_color: randomColor({
-                luminosity: 'random',
-                hue: 'random'
-            })
-        };
         if (user) {
-            if (userDetails.email && userDetails.email !== user.email) {
+            if (response.email && response.email !== user.email) {
                 User.updateOne(userObject);
                 // Generating JWT
                 const token = jwt.sign({ email: userObject.email }, 'secret');

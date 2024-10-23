@@ -21,8 +21,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     password: {
-        type: String,
-        required: true
+        type: String
     },
     avator_color: {
         type: String,

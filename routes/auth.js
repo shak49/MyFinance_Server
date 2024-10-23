@@ -13,7 +13,6 @@ import { validateSignUp, validateSignIn } from '../validation.js';
 
 const router = express.Router();
 const env = process.env;
-const client = new OAuth2Client();
 // Create User
 router.post('/auth/sign-up', async (req, res) => {
     // User exist validation
@@ -67,37 +66,37 @@ router.post('/auth/sign-in', async (req, res) => {
 // Google sign in request
 router.get('/auth/google', async (req, res) => {
     const idToken = req.headers.authorization;
-    const ticket = await client.verifyIdToken({
-        idToken: idToken,
-        audience: env.CLIENT_ID
-    });
-    let response = ticket.getPayload();
-    const user = User.findOne({ email: response.email });
-    // Password encryption
-    //const salt = await bcrypt.genSalt(10);
-    //const encryptedPassword = await bcrypt.hash(response.password, salt);
-    const userObject = {
-        _id: uuidv4(),
-        firstname: response.firstname,
-        lastname: response.lastname,
-        email: response.email,
-        //password: encryptedPassword,
-        avator_color: randomColor({
-            luminosity: 'random',
-            hue: 'random'
-        })
-    };
     try {
+        const client = new OAuth2Client();
+        const ticket = await client.verifyIdTokenAsync({
+            idToken: idToken,
+            audience: env.CLIENT_ID
+        });
+        const response = ticket.getPayload();
+        const user = await User.findOne({ email: response.email });
+        // Password encryption
+        //const salt = await bcrypt.genSalt(10);
+        //const encryptedPassword = await bcrypt.hash(response.password, salt);
+        const newUser = new User({
+            _id: uuidv4(),
+            firstname: response.given_name,
+            lastname: response.family_name,
+            email: response.email,
+            //password: encryptedPassword,
+            avator_color: randomColor({
+                luminosity: 'random',
+                hue: 'random'
+            })
+        });
         if (user) {
             if (response.email && response.email !== user.email) {
-                User.updateOne(userObject);
+                User.updateOne(newUser);
                 // Generating JWT
-                const token = jwt.sign({ email: userObject.email }, 'secret');
+                const token = jwt.sign({ email: newUser.email }, 'secret');
                 res.cookie('token', token).status(200).json({ access_token: token });
             }
         } else {
-            const user = new User(newUser);
-            const savedUser = await user.save();
+            const savedUser = await newUser.save();
             // Generating JWT
             const token = jwt.sign({ email: savedUser.email }, 'secret');
             res.cookie('token', token).status(200).json({ access_token: token });

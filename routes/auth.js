@@ -89,12 +89,10 @@ router.get('/auth/google', async (req, res) => {
             })
         });
         if (user) {
-            if (response.email && response.email !== user.email) {
-                User.updateOne(newUser);
-                // Generating JWT
-                const token = jwt.sign({ email: newUser.email }, 'secret');
-                res.cookie('token', token).status(200).json({ access_token: token });
-            }
+            User.updateOne(newUser);
+            // Generating JWT
+            const token = jwt.sign({ email: newUser.email }, 'secret');
+            res.cookie('token', token).status(200).json({ access_token: token });
         } else {
             const savedUser = await newUser.save();
             // Generating JWT

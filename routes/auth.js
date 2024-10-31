@@ -4,7 +4,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { decode } from 'jsonwebtoken';
 import axios from 'axios';
 import { OAuth2Client } from 'google-auth-library';
 import randomColor from 'randomcolor';
@@ -65,11 +65,11 @@ router.post('/auth/sign-in', async (req, res) => {
 });
 // Google sign in request
 router.get('/auth/google', async (req, res) => {
-    const idToken = req.headers.authorization;
+    const id_token = req.headers.authorization;
     try {
         const client = new OAuth2Client();
         const ticket = await client.verifyIdTokenAsync({
-            idToken: idToken,
+            idToken: id_token,
             audience: env.CLIENT_ID
         });
         const response = ticket.getPayload();
@@ -104,33 +104,18 @@ router.get('/auth/google', async (req, res) => {
     }
 });
 // Apple authentication
-// router.post('/auth/apple', async (req, res) => {
-//     const { token, email, apple_id } = req.body;
-//     const newUser = { apple_id, email };
-//     const user = await User.findOne({ apple_id: apple_id });
-//     if (user) {
-//         if (email && email !== user.email) {
-//             User.updateOne(req.body);
-//             user.email = req.body.email;
-//         }
-//         res.cookie('token', token).status(200).json({ access_token: token });
-//     } else {
-//         await axios.get(env.APPLE_PUBLIC_KEYS, async (error, body) => {
-//             if (error) {
-//                 res.status(401).json({ error: error });
-//             } else {
-//                 const key = jwt.asKeyStore(body);
-//                 try {
-//                     const verified = jwt.verify(token, key);
-//                     if (verified) await user.save(newUser);
-//                     res.cookie('token', token).status(200).json({ access_token: token });
-//                 } catch(error) {
-//                     res.status(500).json({ error: error });
-//                 }
-//             }
-//         });
-//     }
-// });
+router.get('/auth/apple', async (req, res) => {
+    const id_token = req.headers.authorization;
+    try {
+        const response = jwt.decode(id_token);
+        if (!response) return res.status(400).send({ message: 'Unable to decode.' });
+        // Generating JWT
+        const token = jwt.sign({ email: response.email }, 'secret');
+        res.cookie('token', token).status(200).json({ access_token: token });
+    } catch (error) {
+        res.status(500).send({ message: 'Internal server error.' });
+    }
+});
 // Sign Out
 router.get('/auth/sign-out', (req, res) => {
     res.cookie('cookie', '', {

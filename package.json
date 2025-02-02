@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.1",
     "nodemailer": "^6.9.16",
+    "plaid": "^30.0.0",
     "randomcolor": "^0.6.2",
     "uuid": "^10.0.0"
   },

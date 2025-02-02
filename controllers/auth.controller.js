@@ -1,3 +1,6 @@
+//
+//
+//
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt, { decode } from 'jsonwebtoken';
@@ -8,7 +11,7 @@ import {
     validateSignUp, validateSignIn, 
     validatePasswordResetEmail 
 } from '../validation.js';
-import { sendEmail } from '../email-handler.js';
+import { sendEmail } from '../utils/email-handler.js';
 
 const env = process.env;
 

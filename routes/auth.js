@@ -4,8 +4,8 @@
 import express from 'express';
 import { 
     sign_up, sign_in, 
-    google, apple, 
-    sign_out, recover_password 
+    google, apple, sign_out, 
+    recover_password 
 } from '../controllers/auth.controller.js';
 
 const router = express.Router();
